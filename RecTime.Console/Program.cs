@@ -13,8 +13,23 @@ namespace RecTime.Console
             string output = @"C:\users\Kefir\Desktop\test.mp4";
             string argFormat = @" -i ""{0}"" -acodec copy -vcodec copy -absf aac_adtstoasc ""{1}""";
 
-            System.Console.Write("Url: ");
-            string url = System.Console.ReadLine();
+            string url = null;
+            // If an argument was specified on the command line, use it.
+            // Otherwise, prompt for a URL.
+            if (args.Length > 1)
+            {
+                url = args[1];
+            }
+            else
+            {
+                System.Console.Write("Url: ");
+                url = System.Console.ReadLine();
+            }
+            if (string.IsNullOrEmpty(url))
+            {
+                System.Console.Write("No URL specified. RecTime cannot continue.");
+                Environment.Exit(1);
+            }
             StreamManager manager = new StreamManager(url, new StreamDownloader());
 
             System.Console.WriteLine("Downloading Data & stream info...");
@@ -29,7 +44,19 @@ namespace RecTime.Console
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.RedirectStandardError = true;
-            p.StartInfo.FileName = "ffmpeg.exe";
+
+            OperatingSystem os = Environment.OSVersion;
+            switch(os.Platform)
+            {
+                case PlatformID.MacOSX:
+                case PlatformID.Unix:
+                    p.StartInfo.FileName = "ffmpeg";
+                    break;
+                default:
+                    p.StartInfo.FileName = "ffmpeg.exe";
+                    break;
+            }
+
             p.StartInfo.Arguments = string.Format(argFormat, streamUrl, output);
             p.OutputDataReceived += P_OutputDataReceived;
             p.ErrorDataReceived += P_ErrorDataReceived;
